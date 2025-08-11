@@ -1,47 +1,60 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Airbnb Poll</title>
-<style>
-  body { font-family: Arial; margin: 20px; }
-  .option { margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-  button { margin-top: 5px; }
-</style>
+  <meta charset="UTF-8">
+  <title>Airbnb Poll</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; }
+    .option { padding: 10px; border: 1px solid #ddd; margin: 5px 0; border-radius: 5px; }
+    .votes { font-weight: bold; }
+    a { text-decoration: none; color: blue; }
+    button { margin-left: 10px; }
+  </style>
 </head>
 <body>
-<h2>Which Airbnb do you prefer?</h2>
-<div id="poll"></div>
+  <h1>Which Airbnb do you prefer?</h1>
+  <div id="poll"></div>
 
-<script>
-const scriptURL = 'https://script.google.com/macros/s/AKfycbzwxzJumwtBvyuU5PcUdld-wFd2V_6tKANgRfBvTOWPbd579rdO7Z-W7HnpPcSsyi1VBQ/exec'; // Replace with Apps Script Web App URL
+  <script>
+    const scriptUrl = 'https://script.google.com/macros/s/AKfycbzwxzJumwtBvyuU5PcUdld-wFd2V_6tKANgRfBvTOWPbd579rdO7Z-W7HnpPcSsyi1VBQ/exec';
 
-async function loadPoll() {
-  const res = await fetch(`${scriptURL}?action=getTotals`);
-  const data = await res.json();
-  const container = document.getElementById('poll');
-  container.innerHTML = '';
-  for (let id in data) {
-    const opt = data[id];
-    const div = document.createElement('div');
-    div.className = 'option';
-    div.innerHTML = `
-      <div>${opt.name}</div>
-      <div>Votes: ${opt.votes}</div>
-      <button onclick="vote('${id}')">Vote</button>
-    `;
-    container.appendChild(div);
-  }
-}
+    const options = [
+      { id: '1', name: 'Meadow Mountain', url: 'https://www.airbnb.com/rooms/1280774680100631603?adults=13&check_in=2025-11-20&check_out=2025-11-24&wishlist_item_id=11005211931263&source_impression_id=p3_1754932696_P36LHys2BtLtC_jj&previous_page_section_name=1000&guests=13', price: '$211/person' },
+      { id: '2', name: 'Spacious Chalet', url: 'https://www.airbnb.com/rooms/636207401490601720?adults=12&check_in=2025-11-20&check_out=2025-11-24&children=0&infants=0&pets=0&wishlist_item_id=11005231578469&source_impression_id=p3_1754932844_P3yGUt8fkYA5bI3K&previous_page_section_name=1001', price: '$308/person' },
+      { id: '3', name: 'Private Duplex', url: 'https://www.airbnb.com/rooms/48396425?adults=12&check_in=2025-11-20&check_out=2025-11-24&search_mode=regular_search&source_impression_id=p3_1754933054_P3Vi79Li64vh7ptP&previous_page_section_name=1000&federated_search_id=a04b36f9-aafa-425c-988a-e4cc714655d4', price: '$298/person' },
+      { id: '4', name: 'Creekside in the Pines', url: 'https://www.airbnb.com/rooms/681178880899806223?adults=12&check_in=2025-11-20&check_out=2025-11-24&search_mode=regular_search&source_impression_id=p3_1754934075_P3YTupPrKb-7tC-a&previous_page_section_name=1000&federated_search_id=0abdb18b-9e70-4a69-bfa3-cbcd9ee2b34a', price: '$353/person' },
+      { id: '5', name: 'Luxury Rustic Home', url: 'https://www.airbnb.com/rooms/51146290?adults=12&check_in=2025-11-20&check_out=2025-11-24&search_mode=regular_search&source_impression_id=p3_1754933054_P3Ft4sgV5xNHy9Sg&previous_page_section_name=1000&federated_search_id=a04b36f9-aafa-425c-988a-e4cc714655d4', price: '$396/person' }
+    ];
 
-async function vote(optionId) {
-  await fetch(`${scriptURL}?action=vote&option=${optionId}`);
-  loadPoll();
-}
+    function loadVotes() {
+      fetch(`${scriptUrl}?action=getTotals`)
+        .then(res => res.json())
+        .then(data => {
+          const pollDiv = document.getElementById('poll');
+          pollDiv.innerHTML = '';
+          options.forEach(opt => {
+            const votes = data[opt.id]?.votes || 0;
+            const div = document.createElement('div');
+            div.className = 'option';
+            div.innerHTML = `<a href="${opt.url}" target="_blank">${opt.name}</a> - ${opt.price} <span class="votes">(${votes} votes)</span>
+              <button onclick="vote('${opt.id}')">Vote</button>`;
+            pollDiv.appendChild(div);
+          });
+        });
+    }
 
-loadPoll();
-</script>
+    function vote(id) {
+      fetch(`${scriptUrl}?action=vote&option=${id}`)
+        .then(res => res.json())
+        .then(() => loadVotes());
+    }
+
+    loadVotes();
+  </script>
 </body>
 </html>
+
+
 
 
 
