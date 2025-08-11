@@ -1,53 +1,168 @@
-<!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <base target="_top">
-  <title>Airbnb Poll</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Which Airbnb do you prefer?</title>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    .poll-item { border: 1px solid #ccc; padding: 15px; margin-bottom: 10px; }
-    .poll-item h3 { margin-top: 0; }
-    button { background-color: #007bff; color: white; padding: 8px 15px; border: none; cursor: pointer; }
-    button:hover { opacity: 0.8; }
-    .listing-link { margin-top: 5px; display: block; } /* Style for the link */
+    body{font-family:Inter,system-ui,Segoe UI,Arial;margin:18px;max-width:900px}
+    h1{font-size:1.5rem;margin-bottom:.2rem}
+    p.lead{color:#333;margin-top:0}
+    .option{border:1px solid #e6e6e6;padding:12px;border-radius:8px;margin:10px 0;display:flex;justify-content:space-between;align-items:center}
+    .left{max-width:72%}
+    .title{font-weight:600}
+    .desc{font-size:0.95rem;color:#444}
+    .meta{font-size:0.9rem;color:#666;margin-top:6px}
+    .links{display:flex;gap:8px;align-items:center}
+    button.vote{background:#0b74de;color:#fff;border:0;padding:8px 12px;border-radius:6px;cursor:pointer}
+    button.vote:disabled{opacity:.5;cursor:default}
+    .results{margin-top:18px}
+    .bar{height:14px;background:#0b74de;border-radius:7px}
+    .bar-bg{background:#eee;border-radius:7px;height:14px}
+    small.note{color:#666;display:block;margin-top:10px}
   </style>
 </head>
 <body>
   <h1>Which Airbnb do you prefer?</h1>
-  <p>Click an Airbnb link to open it, or press the Vote button to register your pick. Results update live.</p>
-  <div id="poll-container"></div>
+  <p class="lead">Click an Airbnb link to open it, or press the Vote button to register your pick. Results update live.</p>
+
+  <div id="poll">
+    <!-- Options will be injected here -->
+  </div>
+
+  <div class="results">
+    <h3>Live results</h3>
+    <div id="totals">Loading...</div>
+    <small class="note">(Votes are public and require no sign-in.)</small>
+  </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      google.script.run.withSuccessHandler(displayPollOptions).getPollOptions();
+    // ======= CONFIG - set your Apps Script web app base URL here =======
+    // After you deploy the Google Apps Script (instructions in the doc), set:
+    const API_BASE = 'https://script.google.com/macros/s/AKfycbxavECEqd4j5Y-aXEMZwrqSKOGqb2nAUGsm-Mrw15fYAyAz135xwo9vpZqecG4n4faD6A/exec';
+    // e.g. https://script.google.com/macros/s/AKfycbx.../exec
+    // ==================================================================
+
+    // Poll options data (titles, description, link, price shown to user)
+    const OPTIONS = [
+      {
+        id: 'opt1',
+        title: 'Meadow Mountain',
+        price: '$211/person',
+        link: 'https://www.airbnb.com/rooms/1280774680100631603?adults=13&check_in=2025-11-20&check_out=2025-11-24&wishlist_item_id=11005211931263&source_impression_id=p3_1754932696_P36LHys2BtLtC_jj&previous_page_section_name=1000&guests=13',
+        desc: 'Meadow Mountain — great value.'
+      },
+      {
+        id: 'opt2',
+        title: 'Spacious Chalet',
+        price: '$308/person',
+        link: 'https://www.airbnb.com/rooms/636207401490601720?adults=12&check_in=2025-11-20&check_out=2025-11-24&children=0&infants=0&pets=0&wishlist_item_id=11005231578469&source_impression_id=p3_1754932844_P3yGUt8fkYA5bI3K&previous_page_section_name=1001',
+        desc: 'Spacious Chalet — roomy and comfortable.'
+      },
+      {
+        id: 'opt3',
+        title: 'Private Duplex',
+        price: '$298/person',
+        link: 'https://www.airbnb.com/rooms/48396425?adults=12&check_in=2025-11-20&check_out=2025-11-24&search_mode=regular_search&source_impression_id=p3_1754933054_P3Vi79Li64vh7ptP&previous_page_section_name=1000&federated_search_id=a04b36f9-aafa-425c-988a-e4cc714655d4',
+        desc: 'Private Duplex — quiet and private.'
+      },
+      {
+        id: 'opt4',
+        title: 'Creekside in the Pines',
+        price: '$353/person',
+        link: 'https://www.airbnb.com/rooms/681178880899806223?adults=12&check_in=2025-11-20&check_out=2025-11-24&search_mode=regular_search&source_impression_id=p3_1754934075_P3YTupPrKb-7tC-a&previous_page_section_name=1000&federated_search_id=0abdb18b-9e70-4a69-bfa3-cbcd9ee2b34a',
+        desc: 'Creekside in the Pines — scenic views.'
+      },
+      {
+        id: 'opt5',
+        title: 'Luxury Rustic Home',
+        price: '$396/person',
+        link: 'https://www.airbnb.com/rooms/51146290?adults=12&check_in=2025-11-20&check_out=2025-11-24&search_mode=regular_search&source_impression_id=p3_1754933054_P3Ft4sgV5xNHy9Sg&previous_page_section_name=1000&federated_search_id=a04b36f9-aafa-425c-988a-e4cc714655d4',
+        desc: 'Luxury Rustic Home — top amenities.'
+      }
+    ];
+
+    // Build the poll UI
+    const pollDiv = document.getElementById('poll');
+    OPTIONS.forEach(opt => {
+      const el = document.createElement('div'); el.className = 'option';
+      el.innerHTML = `
+        <div class="left">
+          <div class="title">${opt.title} <span style="font-weight:400">— ${opt.price}</span></div>
+          <div class="desc">${opt.desc}</div>
+          <div class="meta"><a href="${opt.link}" target="_blank" rel="noopener">Open listing</a></div>
+        </div>
+        <div class="links">
+          <button class="vote" data-id="${opt.id}">Vote</button>
+        </div>
+      `;
+      pollDiv.appendChild(el);
     });
 
-    function displayPollOptions(options) {
-      const container = document.getElementById('poll-container');
-      container.innerHTML = ''; // Clear previous content
+    // Fetch totals and show bars
+    async function fetchTotals(){
+      if(API_BASE.includes('https://script.google.com/macros')){
+        document.getElementById('totals').innerText = 'Please configure API_BASE in the HTML with your Apps Script web app URL.';
+        return;
+      }
+      try{
+        const res = await fetch(API_BASE + '?action=getTotals');
+        const data = await res.json();
+        renderTotals(data);
+      }catch(e){
+        document.getElementById('totals').innerText = 'Could not load totals — check your Apps Script deployment and CORS settings.';
+        console.error(e);
+      }
+    }
 
-      options.forEach(option => {
-        const itemName = option;   // Column A
-        const price = option;      // Column B
-        const listingUrl = option; // Column C - The link!
-        const votes = option;      // Column D - Not displayed in original image, but available
+    function renderTotals(data){
+      // data expected: { opt1: 12, opt2: 4, ... }
+      const container = document.getElementById('totals');
+      container.innerHTML = '';
+      let max = 1;
+      OPTIONS.forEach(o => { if((data[o.id]||0) > max) max = data[o.id]; });
 
-        const div = document.createElement('div');
-        div.className = 'poll-item';
-        div.innerHTML = `
-          <h3>${itemName} - ${price}</h3>
-          <a href="${listingUrl}" target="_blank" class="listing-link">Open listing</a>
-          <button onclick="voteFor('${itemName}')">Vote</button>
+      OPTIONS.forEach(o =>{
+        const count = data[o.id] || 0;
+        const pct = Math.round((count / (max || 1)) * 100);
+        const row = document.createElement('div');
+        row.style.margin = '8px 0';
+        row.innerHTML = `
+          <div style="display:flex;justify-content:space-between;font-size:0.95rem;margin-bottom:6px;"><div>${o.title}</div><div>${count} votes</div></div>
+          <div class="bar-bg"><div class="bar" style="width:${pct}%"></div></div>
         `;
-        container.appendChild(div);
+        container.appendChild(row);
       });
     }
 
-    function voteFor(itemName) {
-      google.script.run.withSuccessHandler(displayPollOptions).recordVote(itemName);
-    }
+    // Vote handler
+    pollDiv.addEventListener('click', async (e)=>{
+      if(!e.target.matches('button.vote')) return;
+      const id = e.target.dataset.id;
+      e.target.disabled = true;
+      e.target.innerText = 'Voting...';
+      try{
+        await fetch(API_BASE + '?action=vote',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({option:id})
+        });
+        // quick feedback
+        e.target.innerText = 'Voted ✓';
+        setTimeout(()=>{ e.target.innerText = 'Vote'; e.target.disabled = false; },1000);
+        // refresh totals
+        fetchTotals();
+      }catch(err){
+        console.error(err);
+        e.target.innerText = 'Error';
+        setTimeout(()=>{ e.target.innerText = 'Vote'; e.target.disabled = false; },1500);
+      }
+    });
+
+    // Polling for live updates
+    fetchTotals();
+    setInterval(fetchTotals, 4000);
   </script>
-</body>
 </html>
+
 
 
