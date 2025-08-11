@@ -38,7 +38,7 @@
   <script>
     // ======= CONFIG - set your Apps Script web app base URL here =======
     // After you deploy the Google Apps Script (instructions in the doc), set:
-    const API_BASE = 'https://script.google.com/macros/s/AKfycbwx_F18B6HLul--BoTLJ0UxbVMZmx87LX8ih7lRm5eflVaC6D_kCuCFKzUfYJ5XsPavfA/exec';
+    const API_BASE = 'https://script.google.com/macros/s/AKfycbxy8GAXxzk8sr49tYPdJP5AnRvntojSbylDOA5GY1TXwHXt56tFQD0wfmJrSlZJSbISRg/exec';
     // e.g. https://script.google.com/macros/s/AKfycbx.../exec
     // ==================================================================
 
@@ -100,7 +100,7 @@
 
     // Fetch totals and show bars
     async function fetchTotals(){
-      if(API_BASE.includes('https://script.google.com/macros/s/AKfycbwx_F18B6HLul--BoTLJ0UxbVMZmx87LX8ih7lRm5eflVaC6D_kCuCFKzUfYJ5XsPavfA/exec')){
+      if(API_BASE.includes('https://script.google.com/macros/s/AKfycbxy8GAXxzk8sr49tYPdJP5AnRvntojSbylDOA5GY1TXwHXt56tFQD0wfmJrSlZJSbISRg/exec')){
         document.getElementById('totals').innerText = 'Please configure API_BASE in the HTML with your Apps Script web app URL.';
         return;
       }
@@ -163,6 +163,4 @@
     setInterval(fetchTotals, 4000);
   </script>
 
-</body>
-</html>
 
